@@ -1567,170 +1567,6 @@ function retakeQuiz() { goToQuiz(); }
 document.getElementById('coverHero').style.display = 'block';
 </script>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-  import {
-    getFirestore,
-    collection,
-    addDoc
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyA8fshPvDmPgtQ3aKJypQN9fsN2BuY6oNU",
-    authDomain: "nrgi-quiz.firebaseapp.com",
-    projectId: "nrgi-quiz",
-    storageBucket: "nrgi-quiz.firebasestorage.app",
-    messagingSenderId: "177460239198",
-    appId: "1:177460239198:web:6e92bb2f778c5f1b4b4dcf"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  window.saveQuizResponse = async function(data) {
-    try {
-      await addDoc(collection(db, "quizResponses"), data);
-      console.log("Quiz response saved!");
-      alert("Quiz submitted successfully!");
-    } catch (error) {
-      console.error("Error saving response:", error);
-      alert("Error saving quiz response.");
-    }
-  };
-</script>
-
-<script>
-window.addEventListener('load', function() {
-
-  function captureQuizData() {
-    try {
-      const selectedAnswers = [];
-
-      document.querySelectorAll('input[type="radio"]:checked').forEach((input, index) => {
-        selectedAnswers.push({
-          question: index + 1,
-          answer: input.value
-        });
-      });
-
-      const scoreElement = document.body.innerText.match(/(\d+)\s*\/\s*(\d+)/);
-
-      let score = null;
-      let total = null;
-
-      if (scoreElement) {
-        score = scoreElement[1];
-        total = scoreElement[2];
-      }
-
-      saveQuizResponse({
-        score: score,
-        totalQuestions: total,
-        answers: selectedAnswers,
-        submittedAt: new Date().toISOString(),
-        userAgent: navigator.userAgent
-      });
-
-    } catch (err) {
-      console.error("Firebase submission failed", err);
-    }
-  }
-
-  document.querySelectorAll('button').forEach(btn => {
-    if (
-      btn.innerText.toLowerCase().includes('submit') ||
-      btn.innerText.toLowerCase().includes('finish') ||
-      btn.innerText.toLowerCase().includes('result')
-    ) {
-      btn.addEventListener('click', function() {
-        setTimeout(captureQuizData, 1000);
-      });
-    }
-  });
-
-});
-</script>
-
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyA8fshPvDmPgtQ3aKJypQN9fsN2BuY6oNU",
-  authDomain: "nrgi-quiz.firebaseapp.com",
-  projectId: "nrgi-quiz",
-  storageBucket: "nrgi-quiz.firebasestorage.app",
-  messagingSenderId: "177460239198",
-  appId: "1:177460239198:web:6e92bb2f778c5f1b4b4dcf"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.saveQuizResponse = async function(payload) {
-  try {
-    await addDoc(collection(db, "quizResponses"), payload);
-    console.log("Quiz response saved successfully");
-  } catch (err) {
-    console.error("Firebase save failed", err);
-  }
-};
-
-window.addEventListener("load", () => {
-
-  function getQuizData() {
-    const selectedAnswers = [];
-
-    document.querySelectorAll('input[type="radio"]:checked').forEach((el, idx) => {
-      selectedAnswers.push({
-        question: idx + 1,
-        answer: el.value
-      });
-    });
-
-    let scoreText = "";
-    const bodyText = document.body.innerText;
-
-    const scoreMatch = bodyText.match(/(\d+)\s*\/\s*(\d+)/);
-
-    if (scoreMatch) {
-      scoreText = scoreMatch[0];
-    }
-
-    return {
-      score: scoreText,
-      answers: selectedAnswers,
-      submittedAt: new Date().toISOString(),
-      page: window.location.href
-    };
-  }
-
-  async function handleSubmit() {
-    const data = getQuizData();
-    await window.saveQuizResponse(data);
-    alert("Quiz response submitted successfully!");
-  }
-
-  document.querySelectorAll("button").forEach(btn => {
-    const text = btn.innerText.toLowerCase();
-
-    if (
-      text.includes("submit") ||
-      text.includes("finish") ||
-      text.includes("result") ||
-      text.includes("complete")
-    ) {
-      btn.addEventListener("click", () => {
-        setTimeout(handleSubmit, 1500);
-      });
-    }
-  });
-
-});
-</script>
-
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -1752,41 +1588,38 @@ async function saveQuizRecord() {
   try {
     const bodyText = document.body.innerText;
 
-    const nameMatch = bodyText.match(/Name:\s*(.*)/i);
-    const dateMatch = bodyText.match(/Date:\s*(.*)/i);
-    const scoreMatch = bodyText.match(/Score:\s*(.*)/i);
-    const outcomeMatch = bodyText.match(/Outcome:\s*(.*)/i);
-    const codeMatch = bodyText.match(/Completion code:\s*(.*)/i);
-
     const payload = {
-      name: nameMatch ? nameMatch[1].trim() : "",
-      date: dateMatch ? dateMatch[1].trim() : "",
-      score: scoreMatch ? scoreMatch[1].trim() : "",
-      outcome: outcomeMatch ? outcomeMatch[1].trim() : "",
-      completionCode: codeMatch ? codeMatch[1].trim() : "",
-      submittedAt: new Date().toISOString(),
-      page: window.location.href
+      name: (bodyText.match(/Name:\s*(.*)/i) || [,''])[1],
+      date: (bodyText.match(/Date:\s*(.*)/i) || [,''])[1],
+      score: (bodyText.match(/Score:\s*(.*)/i) || [,''])[1],
+      outcome: (bodyText.match(/Outcome:\s*(.*)/i) || [,''])[1],
+      completionCode: (bodyText.match(/Completion code:\s*(.*)/i) || [,''])[1],
+      submittedAt: new Date().toISOString()
     };
 
     await addDoc(collection(db, "quizResponses"), payload);
 
-    console.log("Quiz response saved to Firestore", payload);
-    alert("Quiz response saved successfully!");
-  } catch (err) {
-    console.error("Firestore save failed:", err);
+    alert("Quiz response saved to Firestore!");
+    console.log("Saved:", payload);
+
+  } catch (e) {
+    console.error("Firestore Error:", e);
+    alert("Firestore Error: " + e.message);
   }
 }
 
-window.addEventListener("load", () => {
-  document.querySelectorAll("button").forEach(btn => {
-    const text = btn.innerText.toLowerCase();
+document.addEventListener("click", function(e) {
 
-    if (text.includes("copy record")) {
-      btn.addEventListener("click", () => {
-        setTimeout(saveQuizRecord, 1000);
-      });
-    }
-  });
+  const txt = (e.target.innerText || e.target.textContent || "").toLowerCase();
+
+  if (txt.includes("copy record")) {
+
+    setTimeout(() => {
+      saveQuizRecord();
+    }, 500);
+
+  }
+
 });
 </script>
 
