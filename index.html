@@ -1570,7 +1570,7 @@ document.getElementById('coverHero').style.display = 'block';
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA8fshPvDmPgtQ3aKJypQN9fsN2BuY6oNU",
@@ -1586,18 +1586,35 @@ const db = getFirestore(app);
 
 async function saveQuizRecord() {
   try {
-    const bodyText = document.body.innerText;
+
+    const nameElement = document.querySelector('dd');
+    const scoreElement = Array.from(document.querySelectorAll('dt'))
+      .find(el => el.textContent.trim() === 'Score');
+    const outcomeElement = Array.from(document.querySelectorAll('dt'))
+      .find(el => el.textContent.trim() === 'Outcome');
+
+    const name = nameElement ? nameElement.textContent.trim() : "Unknown";
+    const score = scoreElement ? scoreElement.nextElementSibling.textContent.trim() : "";
+    const outcome = outcomeElement ? outcomeElement.nextElementSibling.textContent.trim() : "";
+    const completionCode = document.getElementById("completionCode")?.textContent.trim() || "";
+
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
 
     const payload = {
-      name: (bodyText.match(/Name:\s*(.*)/i) || [,''])[1],
-      date: (bodyText.match(/Date:\s*(.*)/i) || [,''])[1],
-      score: (bodyText.match(/Score:\s*(.*)/i) || [,''])[1],
-      outcome: (bodyText.match(/Outcome:\s*(.*)/i) || [,''])[1],
-      completionCode: (bodyText.match(/Completion code:\s*(.*)/i) || [,''])[1],
-      submittedAt: new Date().toISOString()
+      name: name,
+      date: dateStr,
+      score: score,
+      outcome: outcome,
+      completionCode: completionCode,
+      submittedAt: today.toISOString()
     };
 
-    await addDoc(collection(db, "quizResponses"), payload);
+    // Readable document name in Firestore
+    const safeName = name.replace(/[^a-zA-Z0-9]/g, "_");
+    const docId = `${safeName}_${Date.now()}`;
+
+    await setDoc(doc(db, "quizResponses", docId), payload);
 
     alert("Quiz response saved to Firestore!");
     console.log("Saved:", payload);
