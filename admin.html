@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NRGI Quiz Admin Dashboard</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  margin:0;
+  background:#f4f6f8;
+  color:#333;
+}
+
+header{
+  background:#0d5c47;
+  color:white;
+  padding:20px;
+  text-align:center;
+}
+
+.container{
+  padding:20px;
+}
+
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+input, select, button{
+  padding:10px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+button{
+  background:#0d5c47;
+  color:white;
+  cursor:pointer;
+  border:none;
+}
+
+button:hover{
+  background:#11775b;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+}
+
+th, td{
+  padding:12px;
+  border-bottom:1px solid #ddd;
+  text-align:left;
+}
+
+th{
+  background:#0d5c47;
+  color:white;
+  position:sticky;
+  top:0;
+}
+
+.pass{
+  color:green;
+  font-weight:bold;
+}
+
+.fail{
+  color:red;
+  font-weight:bold;
+}
+
+@media(max-width:768px){
+  table{
+    font-size:12px;
+  }
+
+  .controls{
+    flex-direction:column;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>NRGI Quiz Admin Dashboard</h1>
+</header>
+
+<div class="container">
+
+<div class="controls">
+  <input type="text" id="searchInput" placeholder="Search by Name">
+
+  <select id="outcomeFilter">
+    <option value="">All Results</option>
+    <option value="PASSED">Passed</option>
+    <option value="NOT YET PASSED">Not Yet Passed</option>
+  </select>
+
+  <button onclick="exportCSV()">Export CSV</button>
+</div>
+
+<table id="resultsTable">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Score</th>
+      <th>Outcome</th>
+      <th>Completion Code</th>
+      <th>Date</th>
+      <th>Submitted</th>
+    </tr>
+  </thead>
+
+  <tbody></tbody>
+</table>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA8fshPvDmPgtQ3aKJypQN9fsN2BuY6oNU",
+  authDomain: "nrgi-quiz.firebaseapp.com",
+  projectId: "nrgi-quiz",
+  storageBucket: "nrgi-quiz.firebasestorage.app",
+  messagingSenderId: "177460239198",
+  appId: "1:177460239198:web:6e92bb2f778c5f1b4b4dcf"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let allResponses = [];
+
+async function loadResponses(){
+
+  const querySnapshot = await getDocs(collection(db, "quizResponses"));
+
+  allResponses = [];
+
+  querySnapshot.forEach((doc) => {
+    allResponses.push(doc.data());
+  });
+
+  renderTable(allResponses);
+}
+
+function renderTable(data){
+
+  const tbody = document.querySelector("#resultsTable tbody");
+
+  tbody.innerHTML = "";
+
+  data.forEach(item => {
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${item.name || ""}</td>
+      <td>${item.score || ""}</td>
+      <td class="${(item.outcome || "").includes("PASS") ? "pass":"fail"}">${item.outcome || ""}</td>
+      <td>${item.completionCode || ""}</td>
+      <td>${item.date || ""}</td>
+      <td>${item.submittedAt || ""}</td>
+    `;
+
+    tbody.appendChild(row);
+
+  });
+}
+
+document.getElementById("searchInput").addEventListener("input", filterResults);
+document.getElementById("outcomeFilter").addEventListener("change", filterResults);
+
+function filterResults(){
+
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const outcome = document.getElementById("outcomeFilter").value;
+
+  const filtered = allResponses.filter(item => {
+
+    const nameMatch = (item.name || "").toLowerCase().includes(search);
+
+    const outcomeMatch = !outcome || item.outcome === outcome;
+
+    return nameMatch && outcomeMatch;
+
+  });
+
+  renderTable(filtered);
+}
+
+window.exportCSV = function(){
+
+  let csv = "Name,Score,Outcome,CompletionCode,Date,SubmittedAt\n";
+
+  allResponses.forEach(item => {
+
+    csv += `"${item.name || ""}","${item.score || ""}","${item.outcome || ""}","${item.completionCode || ""}","${item.date || ""}","${item.submittedAt || ""}"\n`;
+
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "quiz-results.csv";
+  a.click();
+
+  URL.revokeObjectURL(url);
+
+}
+
+loadResponses();
+
+</script>
+
+</body>
+</html>
