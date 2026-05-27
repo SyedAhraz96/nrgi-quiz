@@ -1566,5 +1566,91 @@ function retakeQuiz() { goToQuiz(); }
 // Hide hero on load (only show on cover screen)
 document.getElementById('coverHero').style.display = 'block';
 </script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+  import {
+    getFirestore,
+    collection,
+    addDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA8fshPvDmPgtQ3aKJypQN9fsN2BuY6oNU",
+    authDomain: "nrgi-quiz.firebaseapp.com",
+    projectId: "nrgi-quiz",
+    storageBucket: "nrgi-quiz.firebasestorage.app",
+    messagingSenderId: "177460239198",
+    appId: "1:177460239198:web:6e92bb2f778c5f1b4b4dcf"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.saveQuizResponse = async function(data) {
+    try {
+      await addDoc(collection(db, "quizResponses"), data);
+      console.log("Quiz response saved!");
+      alert("Quiz submitted successfully!");
+    } catch (error) {
+      console.error("Error saving response:", error);
+      alert("Error saving quiz response.");
+    }
+  };
+</script>
+
+<script>
+window.addEventListener('load', function() {
+
+  function captureQuizData() {
+    try {
+      const selectedAnswers = [];
+
+      document.querySelectorAll('input[type="radio"]:checked').forEach((input, index) => {
+        selectedAnswers.push({
+          question: index + 1,
+          answer: input.value
+        });
+      });
+
+      const scoreElement = document.body.innerText.match(/(\d+)\s*\/\s*(\d+)/);
+
+      let score = null;
+      let total = null;
+
+      if (scoreElement) {
+        score = scoreElement[1];
+        total = scoreElement[2];
+      }
+
+      saveQuizResponse({
+        score: score,
+        totalQuestions: total,
+        answers: selectedAnswers,
+        submittedAt: new Date().toISOString(),
+        userAgent: navigator.userAgent
+      });
+
+    } catch (err) {
+      console.error("Firebase submission failed", err);
+    }
+  }
+
+  document.querySelectorAll('button').forEach(btn => {
+    if (
+      btn.innerText.toLowerCase().includes('submit') ||
+      btn.innerText.toLowerCase().includes('finish') ||
+      btn.innerText.toLowerCase().includes('result')
+    ) {
+      btn.addEventListener('click', function() {
+        setTimeout(captureQuizData, 1000);
+      });
+    }
+  });
+
+});
+</script>
+
 </body>
 </html>
