@@ -1652,5 +1652,84 @@ window.addEventListener('load', function() {
 });
 </script>
 
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA8fshPvDmPgtQ3aKJypQN9fsN2BuY6oNU",
+  authDomain: "nrgi-quiz.firebaseapp.com",
+  projectId: "nrgi-quiz",
+  storageBucket: "nrgi-quiz.firebasestorage.app",
+  messagingSenderId: "177460239198",
+  appId: "1:177460239198:web:6e92bb2f778c5f1b4b4dcf"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.saveQuizResponse = async function(payload) {
+  try {
+    await addDoc(collection(db, "quizResponses"), payload);
+    console.log("Quiz response saved successfully");
+  } catch (err) {
+    console.error("Firebase save failed", err);
+  }
+};
+
+window.addEventListener("load", () => {
+
+  function getQuizData() {
+    const selectedAnswers = [];
+
+    document.querySelectorAll('input[type="radio"]:checked').forEach((el, idx) => {
+      selectedAnswers.push({
+        question: idx + 1,
+        answer: el.value
+      });
+    });
+
+    let scoreText = "";
+    const bodyText = document.body.innerText;
+
+    const scoreMatch = bodyText.match(/(\d+)\s*\/\s*(\d+)/);
+
+    if (scoreMatch) {
+      scoreText = scoreMatch[0];
+    }
+
+    return {
+      score: scoreText,
+      answers: selectedAnswers,
+      submittedAt: new Date().toISOString(),
+      page: window.location.href
+    };
+  }
+
+  async function handleSubmit() {
+    const data = getQuizData();
+    await window.saveQuizResponse(data);
+    alert("Quiz response submitted successfully!");
+  }
+
+  document.querySelectorAll("button").forEach(btn => {
+    const text = btn.innerText.toLowerCase();
+
+    if (
+      text.includes("submit") ||
+      text.includes("finish") ||
+      text.includes("result") ||
+      text.includes("complete")
+    ) {
+      btn.addEventListener("click", () => {
+        setTimeout(handleSubmit, 1500);
+      });
+    }
+  });
+
+});
+</script>
+
 </body>
 </html>
